@@ -1,6 +1,3 @@
-
-***
-
 # Phase 3 Technical Report: Baseline Multi-Agent Implementation
 **Project:** Memory Attacks and Defenses in Multi-Agent LLM-Controlled UAV Systems
 **Date:** November 2025
