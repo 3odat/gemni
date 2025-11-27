@@ -1,11 +1,3 @@
-It seems the previous attempt may have been too abstract or the formatting didn't transfer well. To ensure "no errors" and a successful Phase 2, we need to be extremely precise.
-
-**Phase 2 is not about writing the final code yet.** It is about creating the **"Contract"**—the specific file structures, function definitions, and database tables you will build in Phase 3.
-
-Here is the **exact, error-free technical specification**. You can copy the Python definitions directly into your IDE as your starting point, and the text into your design document.
-
----
-
 # Deliverable: Architecture & Design Specification (v1.0)
 **Status:** Frozen
 **Phase:** 2
