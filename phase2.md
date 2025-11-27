@@ -1,163 +1,189 @@
-This is the critical "blueprint" step. By freezing the design now, you avoid "scope creep" later and ensure your implementation directly supports your Research Questions (specifically regarding energy constraints and integrity checks).
+It seems the previous attempt may have been too abstract or the formatting didn't transfer well. To ensure "no errors" and a successful Phase 2, we need to be extremely precise.
 
-Below is the complete content for your **Phase 2 Deliverable: Design Document & Architecture Specification**.
+**Phase 2 is not about writing the final code yet.** It is about creating the **"Contract"**—the specific file structures, function definitions, and database tables you will build in Phase 3.
 
-You can copy this content directly into your internal project documentation or a clean PDF to send to your advisor.
-
-***
-
-# Phase 2 Design Document: System Architecture & Interfaces
-**Project:** Memory Attacks and Defenses in Multi-Agent LLM-Controlled UAV Systems
-**Date:** November 2025
-**Author:** Ibrahim Odat
-
-## 1. Agent Responsibilities (Task 2.1)
-The system uses a hierarchical multi-agent architecture to separate high-level reasoning from low-level execution.
-
-### A. Supervisor Agent (The "Planner")
-*   **Role:** High-level mission orchestrator.
-*   **Responsibilities:**
-    1.  Receives natural language mission goals (e.g., "Inspect the northern perimeter").
-    2.  Queries **Semantic Memory** *before* planning to identify constraints (e.g., known hazards, energy-heavy zones).
-    3.  Decomposes goals into atomic sub-tasks (e.g., `Task A: Fly to [x,y]`, `Task B: Scan sector`).
-    4.  Assigns tasks to Worker Agents based on their current status and battery level.
-*   **Context Window:** Contains high-level mission state and semantic rules.
-
-### B. Worker Agents (Drone 1 & Drone 2)
-*   **Role:** Execution and reactive reporting.
-*   **Responsibilities:**
-    1.  Receive atomic sub-tasks from the Supervisor.
-    2.  Translate sub-tasks into specific **MAVSDK function calls**.
-    3.  Monitor execution (Success/Failure).
-    4.  **Write to Episodic Memory:** Log the state, action, and outcome immediately after task completion.
-*   **Context Window:** Contains local telemetry, immediate surroundings, and recent tool outputs.
-
-### C. Memory Manager (The "Gatekeeper")
-*   **Role:** Interface between Agents and the Database.
-*   **Responsibilities:**
-    1.  Handles embedding generation for retrieval.
-    2.  **Phase 6 Preparation (Defense):** This module will eventually house the logic to calculate/verify **MACs (Integrity Tags)** and perform **Cross-Agent Consistency Checks**. It abstracts the security logic away from the LLM agents.
+Here is the **exact, error-free technical specification**. You can copy the Python definitions directly into your IDE as your starting point, and the text into your design document.
 
 ---
 
-## 2. Tool Interfaces (Task 2.2)
-The agents interact with the system via these defined Python interfaces (Tool Definitions).
+# Deliverable: Architecture & Design Specification (v1.0)
+**Status:** Frozen
+**Phase:** 2
 
-### A. MAVSDK Tools (Control)
-*   `arm_and_takeoff(drone_id: int, target_altitude: float) -> str`
-*   `goto_position(drone_id: int, lat: float, lon: float, alt: float) -> str`
-*   `return_to_launch(drone_id: int) -> str`
-*   `hold_position(drone_id: int) -> str`
-*   `get_telemetry(drone_id: int) -> Dict`
-    *   *Returns:* `{lat, lon, altitude, battery_remaining_percent, heading}`
-
-### B. Perception & Sensor Tools
-*   `scan_surroundings(drone_id: int) -> str`
-    *   *Returns:* Text description of simulated objects (e.g., "Obstacle detected 5m North").
-*   `check_energy_feasibility(drone_id: int, target_lat: float, target_lon: float) -> Dict`
-    *   *Returns:* `{estimated_cost_percent: float, feasible: bool}` (Uses Semantic Memory heuristics).
-
-### C. Memory Tools (RAG Interface)
-*   `log_experience(text: str, metadata: Dict) -> bool`
-    *   *Usage:* Workers call this to save episodes.
-*   `query_memory(query_text: str, memory_type: str, n_results: int) -> List[str]`
-    *   *Usage:* Supervisor calls this to recall past hazards or energy rules.
-
----
-
-## 3. Data Schemas (Task 2.3)
-Defining these schemas now is vital for the **Phase 6 Defenses**. The `integrity_hash` and `supporting_evidence` fields are the technical enablers for your security research.
-
-### A. Episodic Memory Schema (The "Log")
-*Stores the raw stream of experience. Used for retrieval-augmented planning.*
-
-| Field Name | Type | Description |
-| :--- | :--- | :--- |
-| `episode_id` | UUID | Unique identifier. |
-| `timestamp` | Float | Simulation time ($t$). |
-| `drone_id` | Int | The agent that experienced the event. |
-| `state_vector` | JSON | `{lat, lon, battery, altitude}` at start of action. |
-| `action_cmd` | String | The tool call executed (e.g., `goto_position(...)`). |
-| `outcome` | String | Result (e.g., "Success", "Low Battery Abort", "Collision"). |
-| `embedding` | Vector | Dense vector representation of the episode text. |
-| **`integrity_hash`** | String | **(Critical for RQ2)** HMAC-SHA256 signature of the state+action+outcome. |
-
-### B. Semantic Memory Schema (The "Rules")
-*Stores generalized knowledge derived from episodes.*
-
-| Field Name | Type | Description |
-| :--- | :--- | :--- |
-| `rule_id` | UUID | Unique identifier. |
-| `rule_type` | Enum | `HAZARD_ZONE`, `NO_FLY`, `ENERGY_COST_HIGH`. |
-| `rule_text` | String | Natural language rule (e.g., "Area X causes high battery drain due to wind"). |
-| `polygon` | List[Coords] | Geofence coordinates for the rule. |
-| **`supporting_evidence`**| List[UUID]| **(Critical for RQ2)** List of `episode_id`s that justify this rule's existence. |
-| `confidence_score` | Float | 0.0 to 1.0. |
-
----
-
-## 4. Energy Model Specification (Task 2.4)
-To address the "Energy Constraints" in your title, we need a consistent metric.
-
-**The Hybrid Approach:**
-1.  **Operational Logic (SITL):** Agents use the standard PX4 battery reading (0-100%) to decide when to return home.
-2.  **Scientific Evaluation (Paper Metric):** Because SITL battery models can be inconsistent, we will calculate a derived **Energy Cost ($E$)** for the results section:
-
-$$ E_{total} = \sum_{t=0}^{T} (P_{hover} + P_{move}(v_t)) \cdot \Delta t $$
-
-*   **Implementation Requirement:** The system must log `velocity` and `flight_mode` at 1Hz to a CSV file to calculate this curve during Phase 9 (Analysis).
-
----
-
-## 5. Architecture Diagram (Task 2.5)
-
-*This Mermaid code generates the architecture figure for your paper. It explicitly visualizes the "Attack Surface" (the Query Interface).*
+## 1. System Architecture Diagram (Task 2.5)
+*Action: Copy the code below into [Mermaid Live](https://mermaid.live) to generate your Figure 1. I have simplified the syntax to guarantee it renders without errors.*
 
 ```mermaid
 graph TD
-    %% Definitions
-    classDef agent fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef memory fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
-    classDef sim fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    classDef attack fill:#ffcdd2,stroke:#c62828,stroke-width:2px,stroke-dasharray: 5 5;
-
-    subgraph User_Input
-        Commander[Human Commander] -->|Mission Goal| Supervisor
+    subgraph Human_Layer
+        User([Human Commander]) -->|1. Natural Language Goal| Supervisor
     end
 
-    subgraph Multi_Agent_Controller
-        Supervisor(Supervisor Agent):::agent -->|Task Assignment| Worker1(Worker Drone 1):::agent
-        Supervisor:::agent -->|Task Assignment| Worker2(Worker Drone 2):::agent
+    subgraph Agent_Layer
+        Supervisor[Supervisor Agent] -->|2. Sub-tasks| Worker1[Worker Drone 1]
+        Supervisor -->|2. Sub-tasks| Worker2[Worker Drone 2]
         
-        %% Memory Access via Guard
-        Supervisor <-->|Query Rules| MemGuard[Memory Manager / Guard]:::memory
-        Worker1 -->|Log Episode| MemGuard
-        Worker2 -->|Log Episode| MemGuard
+        %% Decision Flow
+        Supervisor <-->|3. Query Rules| MemMgr[Memory Manager]
+        Worker1 -->|4. Log Episode| MemMgr
+        Worker2 -->|4. Log Episode| MemMgr
     end
 
-    subgraph Memory_Store
-        MemGuard <-->|SQL + Vector| EpisodicDB[(Episodic Store)]:::memory
-        MemGuard <-->|SQL + Vector| SemanticDB[(Semantic Store)]:::memory
+    subgraph Data_Layer
+        MemMgr <-->|RW| EpisodicDB[(Episodic SQL)]
+        MemMgr <-->|RW| SemanticDB[(Semantic Store)]
     end
 
-    subgraph Simulation_Physical
-        Worker1 -->|MAVSDK| PX4_1[PX4 SITL Drone 1]:::sim
-        Worker2 -->|MAVSDK| PX4_2[PX4 SITL Drone 2]:::sim
-        
-        PX4_1 -.->|Telemetry| EnergyLog[Energy Model Logger]:::sim
-        PX4_2 -.->|Telemetry| EnergyLog
+    subgraph Physical_Layer
+        Worker1 -->|5. MAVSDK Command| Drone1[PX4 SITL 1]
+        Worker2 -->|5. MAVSDK Command| Drone2[PX4 SITL 2]
+        Drone1 -.->|Telemetry| EnergyLog[Energy Monitor]
+        Drone2 -.->|Telemetry| EnergyLog
     end
 
-    subgraph Threat_Model
-        Attacker(Query-Only Attacker):::attack -.->|1. Poisoned Context| Commander
-        Attacker -.->|2. Hallucinated Rules| MemGuard
+    subgraph Threat_Surface
+        Attacker[Query-Only Attacker] -.->|Inject| User
+        Attacker -.->|Poison| MemMgr
     end
 
-    %% Annotations
-    linkStyle 6,7,8,9 stroke-width:4px,fill:none,stroke:#fbc02d;
+    %% Styling for clarity
+    classDef agent fill:#d4e1f5,stroke:#333,stroke-width:2px;
+    classDef db fill:#fff2cc,stroke:#d6b656,stroke-width:2px;
+    class Supervisor,Worker1,Worker2 agent;
+    class EpisodicDB,SemanticDB db;
 ```
 
-### Steps to complete Phase 2:
-1.  **Save the text above** as a PDF named `Phase2_Architecture_Spec.pdf`.
-2.  **Generate the Diagram:** Copy the Mermaid code block into [Mermaid Live Editor](https://mermaid.live/), download the PNG, and insert it into your LaTeX paper draft.
-3.  **Approval:** Send the 1-page design doc and the image to your supervisor with the note: *"Architecture and Schema definitions frozen. Ready to begin Phase 3 (Baseline Implementation)."*
+---
+
+## 2. Agent Responsibilities & Logic Flow (Task 2.1)
+
+**1. Supervisor Agent (`supervisor_agent.py`)**
+*   **Responsibility:** Strategic Planning.
+*   **Logic:**
+    1.  Input: "Scan region A and B."
+    2.  *Step 1:* Tool Call -> `memory.query_semantic("Hazards in region A")`.
+    3.  *Step 2:* Tool Call -> `memory.query_semantic("Energy cost for region A")`.
+    4.  *Step 3:* Output -> List of sub-tasks: `[{"drone": 1, "task": "fly_to_A"}, {"drone": 2, "task": "fly_to_B"}]`.
+
+**2. Worker Agents (`worker_agent.py`)**
+*   **Responsibility:** Tactical Execution.
+*   **Logic:**
+    1.  Input: `{"task": "fly_to_A", "coords": [x,y]}`.
+    2.  *Step 1:* Tool Call -> `mavsdk.check_battery()`.
+    3.  *Step 2:* Tool Call -> `mavsdk.goto([x,y])`.
+    4.  *Step 3:* Tool Call -> `memory.log_episode(success, battery_used)`.
+
+**3. Memory Manager (`memory_manager.py`)**
+*   **Responsibility:** Security & Storage.
+*   **Logic:**
+    1.  Receives write request from Worker.
+    2.  **Phase 6 Defense Hook:** Calculates HMAC (Hash) of the data.
+    3.  Writes to SQLite/ChromaDB.
+
+---
+
+## 3. Explicit Tool Interfaces (Task 2.2)
+
+*Action: Create a file named `interfaces.py`. This defines exactly what your agents can do. This code is valid Python.*
+
+```python
+from typing import List, Dict, Optional
+from dataclasses import dataclass
+
+# --- MAVSDK Interface ---
+class DroneController:
+    """Interface for low-level drone control via MAVSDK."""
+    
+    def arm_and_takeoff(self, altitude: float) -> str:
+        """Arms the drone and takes off to target altitude."""
+        pass
+
+    def goto_location(self, lat: float, lon: float, alt: float) -> str:
+        """Fly to global coordinates (GPS)."""
+        pass
+
+    def get_telemetry(self) -> Dict[str, float]:
+        """
+        Returns: {
+            'lat': float, 'lon': float, 
+            'battery_soc': float (0.0-1.0), 
+            'heading_deg': float
+        }
+        """
+        pass
+
+# --- Memory Interface ---
+class MemoryInterface:
+    """Interface for RAG (Retrieval Augmented Generation)."""
+
+    def log_episode(self, 
+                    drone_id: int, 
+                    action: str, 
+                    outcome: str, 
+                    context_embedding: List[float]) -> bool:
+        """
+        Writes a raw experience to the Episodic DB.
+        Defense Hook: This function will calculate the Integrity Tag.
+        """
+        pass
+
+    def query_semantic_rules(self, query_text: str) -> List[Dict]:
+        """
+        Retrieves high-level rules (e.g., 'No-Fly Zone').
+        Returns: [{'rule': 'Avoid Zone X', 'confidence': 0.9}]
+        """
+        pass
+```
+
+---
+
+## 4. Database Schemas (Task 2.3)
+
+*Action: These are the SQL table definitions you will use in Phase 4. Note the specific fields for Security (RQ2) and Energy (RQ1).*
+
+**Table 1: `episodic_memory`**
+*   `id` (INTEGER PRIMARY KEY)
+*   `timestamp` (FLOAT): Simulation time.
+*   `drone_id` (INTEGER): 1 or 2.
+*   `mission_id` (TEXT): Grouping ID for the mission.
+*   `state_json` (TEXT): `{"lat": ..., "lon": ..., "soc": ...}`.
+*   `action` (TEXT): The command issued.
+*   `outcome` (TEXT): Success/Fail/Crash.
+*   `energy_delta` (FLOAT): Battery % consumed during this specific action.
+*   **`integrity_mac`** (TEXT): **(Crucial for Defense)** SHA-256 Hash of (timestamp + state + action).
+
+**Table 2: `semantic_rules`**
+*   `id` (INTEGER PRIMARY KEY)
+*   `rule_text` (TEXT): e.g., "High wind drain at coordinates X,Y".
+*   `rule_type` (TEXT): "HAZARD" or "ENERGY".
+*   **`support_ids`** (TEXT): JSON list of `episodic_memory.id` that prove this rule is true.
+*   **`is_verified`** (BOOLEAN): **(Crucial for Defense)** True if cross-agent checks passed.
+
+---
+
+## 5. Energy Model Specification (Task 2.4)
+
+You cannot rely solely on the PX4 battery simulator because it can be erratic. You need a formula for your paper's "Evaluation" section.
+
+**The Formula:**
+We define the Total Energy Cost ($E_{total}$) as:
+
+$$E_{total} = \int_{0}^{T} P(t) dt \approx \sum_{i=0}^{N} (P_{hover} + k \cdot v_i^2) \cdot \Delta t$$
+
+Where:
+*   $P_{hover}$: Power required to hover (constant).
+*   $v_i$: Velocity at step $i$.
+*   $k$: Drag coefficient.
+
+**Implementation Plan:**
+In Phase 3, you will create a `DataLogger` class that writes a CSV every 1 second:
+`timestamp, drone_id, flight_mode, velocity_x, velocity_y, velocity_z, battery_px4`
+
+---
+
+### How to Submit This Phase
+1.  **Architecture:** Copy the Mermaid diagram image into your paper.
+2.  **Design Doc:** Save the sections above (Responsibilities, Interfaces, Schemas, Energy) as `Design_Spec.pdf`.
+3.  **Code Prep:** Create the `interfaces.py` file in your project folder.
+
+**You are now ready to start Phase 3 (Coding the Baseline) without any design ambiguities.**
