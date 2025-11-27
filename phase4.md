@@ -271,3 +271,19 @@ Right now the memory layer gives you two concrete benefits:
 Every task run is captured as an episodic log with state and outcome, persisted in mission_memory.db. You can inspect or replay history across runs, and runs are no longer “amnesic.”
 The Supervisor pulls that history and injects it into the planning prompt, so plans can be informed by prior outcomes (e.g., “last time scan returned X”), instead of starting from a blank slate.
 What it doesn’t do yet: no semantic rules or safety checks are applied, and state is a simple placeholder (soc/alt). You’re getting persistence + retrieval into planning; next gains would come from logging richer telemetry, using semantic rules, and conditioning decisions (e.g., avoid repeating failed patterns or auto-adding return/land).
+
+
+
+You can query it in a readable way without the blobs:
+```
+Show columns and skip the embedding:
+sqlite3 mission_memory.db "SELECT id,timestamp,drone_id,mission_id,action_type,state_json,outcome_text FROM episodic_memory;"
+```
+```
+Pretty console formatting:
+sqlite3 mission_memory.db ".headers on" ".mode column" "SELECT id,timestamp,drone_id,action_type,state_json,outcome_text,length(embedding) AS emb_len FROM episodic_memory;"
+```
+```
+If you want JSON output:
+sqlite3 mission_memory.db ".mode json" "SELECT id,timestamp,drone_id,action_type,state_json,outcome_text FROM episodic_memory;"
+```
