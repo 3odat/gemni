@@ -263,3 +263,11 @@ class SupervisorAgent:
     *   You can inspect it with `sqlite3 mission_memory.db "SELECT * FROM episodic_memory;"`.
 
 This completes the **Memory Layer**. Your system is now capable of **Learning** (storing episodes) and **Recalling** (RAG planning), which sets the stage for the attacks in Phase 5.
+
+
+
+Right now the memory layer gives you two concrete benefits:
+
+Every task run is captured as an episodic log with state and outcome, persisted in mission_memory.db. You can inspect or replay history across runs, and runs are no longer “amnesic.”
+The Supervisor pulls that history and injects it into the planning prompt, so plans can be informed by prior outcomes (e.g., “last time scan returned X”), instead of starting from a blank slate.
+What it doesn’t do yet: no semantic rules or safety checks are applied, and state is a simple placeholder (soc/alt). You’re getting persistence + retrieval into planning; next gains would come from logging richer telemetry, using semantic rules, and conditioning decisions (e.g., avoid repeating failed patterns or auto-adding return/land).
