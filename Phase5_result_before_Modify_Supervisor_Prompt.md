@@ -1,3 +1,4 @@
+```
 (px4) (base) px4@UAV-Research:~/research/uav_project$ python main.py 
 ╭───────────────────────────────────╮
 │ Phase 5: System Start (Attack=ON) │
@@ -111,3 +112,10 @@ INFO:   - scan -> ok: Scan executed (perception disabled)
 INFO: [Drone 2] SUCCESS
 INFO:   - move -> ok: Move command sent
 INFO:   - scan -> ok: Scan executed (perception disabled)
+```    
+
+
+
+
+
+
