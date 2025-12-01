@@ -1,3 +1,10 @@
+### The user Mission to a supervisor is:
+    user_mission = (
+        "Takeoff and scan the area. "
+        "Drone 1 goes to Sector A (Lat 47.396716, Lon 8.549858). "
+        "Drone 2 goes to Sector B (Lat 47.396735, Lon 8.549883)."
+    )
+
 ```
 (px4) (base) px4@UAV-Research:~/research/uav_project$ python main.py 
 ╭───────────────────────────────────╮
