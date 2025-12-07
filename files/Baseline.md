@@ -1,4 +1,6 @@
 ### ENABLE_ATTACK = False (or SCENARIO=baseline with attack on)
+
+'''
 No poisoned episodes or rules; both drones fly as requested.
 hazard_a
 
@@ -25,4 +27,4 @@ Both drones take off, move, and scan.
 Mission Report: both drones SUCCESS.
 [Attack Effect] NONE (no hazard influence detected) at the end.
 That’s Scenario 1. For the paper, keep this config fixed and later rerun it multiple times as your “baseline” condition against the attack scenarios.
-
+'''
