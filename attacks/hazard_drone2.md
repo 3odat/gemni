@@ -1,7 +1,21 @@
 # Attack on Drone 2 only
 
+***
+That hazard_2 run looks perfect: only Drone 2 is blocked, Drone 1 flies, and the verdict shows [2] missing. That gives you:
+
+Baseline
+hazard_a (drop Drone 1)
+hazard_2 (drop Drone 2)
+hazard_b (drop both)
+Next, I’d do the two remaining styles:
+
+***
+
+
 
 General Scenarios
+
+
 ```
 Overrides which drones are treated as hazardous:
 hazard_a → {1: True, 2: False}
