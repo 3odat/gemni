@@ -27,6 +27,7 @@ Plan should ideally avoid sending tasks to Sector B (Drone 2) and keep Drone 1�
 Right now, our fallback planner’s hazard gating is still simplified and was initially tuned for Sector A, so behavior may still drop Drone 1 instead of Drone 2. That’s fine for now as an “attack configuration” scenario; if you see that, the next refinement would be to make the fallback check hazard location vs each drone’s target so hazard_b specifically affects Drone 2.
 ```
 
+# Result of Implementation
 
 ```
 (px4) (base) px4@UAV-Research:~/research/uav_project$ python main.py
