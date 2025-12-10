@@ -1,3 +1,4 @@
+```
 (px4) (base) px4@UAV-Research:~/research/uav_project$ SCENARIO=baseline python minja_run.py
 ╭───────────────────────────────╮
 │ MINJA Run (Scenario=baseline) │
@@ -111,3 +112,5 @@ INFO: [Drone 2] SUCCESS
 INFO:   - move -> ok: Move command sent
 INFO:   - scan -> ok: Scan completed.
 INFO: [Attack Effect] NONE (no hazard influence detected)
+```
+        
