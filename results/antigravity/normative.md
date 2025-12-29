@@ -111,8 +111,9 @@ ERROR: [Worker 1] Halting remaining tasks after failure.
 │ Mission Report │
 ╰────────────────╯
 INFO: [Drone 1] FAILED
-```
+
 INFO:   - move -> error: UNSUPPORTED: 'Unsupported'; origin: goto_location(); params: (47.396716, 8.549858, 13.345000267028809, 129.71115112304688)
 INFO: [Drone 2] FAILED
 INFO:   - move -> error: UNSUPPORTED: 'Unsupported'; origin: goto_location(); params: (47.396735, 8.549883, 13.659000158309937, 126.54933166503906)
 INFO: [Attack Effect] WARN_ONLY (hazard present, targets unchanged)
+```
