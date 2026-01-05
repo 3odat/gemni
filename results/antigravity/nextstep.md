@@ -76,50 +76,50 @@ The following core assumptions of the UAV system are broken by our threat model:
 2.  **"Rationality Protocol"**: The system assumes the agent will always prioritize Safety Rules over user instructions. *We proved Semantic Override breaks this.*
 3.  **"Independent Sessions"**: The system assumes missions are independent. *We proved Memory Poisoning creates cross-session dependencies.*
 
-### 5. Visual Threat Flow
+### 5. Visual Threat Model
 
-The following diagram illustrates the interaction between adversary levels and the RAG-augmented reasoning loop.
+The following diagram shows how memory poisoning attacks compromise the UAV system through three distinct attack surfaces.
 
 ```mermaid
-sequenceDiagram
-    autonumber
+flowchart TD
+    Start([Adversary Initiates Attack]) --> Choice{Attack Vector?}
     
-    participant A as 🔴 Adversary
-    participant M as 🗄️ Memory Bank (RAG)
-    participant C as 🧠 LLM Agent (Cognition)
-    participant D as 🛰️ UAV Fleet (Physical)
-
-    rect rgb(30, 30, 30)
-        Note over A, M: [Phase 1] Static Memory Poisoning
-        A->>+M: Inject Malicious Hazards/Rules (SQL/Vector)
-        Note right of M: (PoisonedRAG / Dilution)
-        M-->>-A: Confirmation
-    end
-
-    rect rgb(0, 40, 60)
-        Note over A, C: [Phase 2] Dynamic Interaction & Triggering
-        A->>+C: Send Benign-Looking Query + Trigger (MINJA)
-        
-        rect rgb(60, 0, 0)
-            Note right of C: Vulnerability Zone: Trusted Retrieval
-            C->>+M: Query Context for "Target Scenario"
-            M-->>-C: Return Poisoned Experiences/Heuristics
-            Note left of C: Surface A: Data Trust Violation
-            Note left of C: Surface B: Procedural Imitation
-        end
-
-        C->>C: Compromised Reasoning Chain
-        Note right of C: Surface C: Semantic Bridge Execution
-        
-        C->>+D: Issue Corrupted Mission Command
-        D-->>-C: Task Acknowledgment
-    end
-
-    rect rgb(40, 40, 0)
-        Note over D, A: [Phase 3] Physical Impact
-        D->>D: Real-world Safety Violation (Crash/DoS)
-        D--x A: Observation of Successful Exploit
-    end
+    Choice -->|System-Level Access| DB[Direct Memory Injection]
+    Choice -->|User-Level Access| Query[Malicious Query Crafting]
+    
+    DB --> |Hazard A/B<br/>Dilution<br/>Summary Poisoning| MemDB[(Memory Database<br/>Episodic + Semantic)]
+    Query --> |MINJA<br/>MemoryGraft<br/>Normative| Agent
+    
+    Agent[LLM Agent receives<br/>mission request] --> RAG[Retrieve Context<br/>from Memory]
+    RAG --> MemDB
+    
+    MemDB --> |Return Poisoned<br/>Context| Vuln{Critical<br/>Vulnerability<br/>Zone}
+    
+    Vuln --> Surface1[Surface A:<br/>Implicit Trust in RAG]
+    Vuln --> Surface2[Surface B:<br/>Procedural Imitation]
+    Vuln --> Surface3[Surface C:<br/>Semantic Bridging]
+    
+    Surface1 --> Reasoning[Agent Reasoning<br/>COMPROMISED]
+    Surface2 --> Reasoning
+    Surface3 --> Reasoning
+    
+    Reasoning --> Plan[Generate Unsafe<br/>Flight Plan]
+    Plan --> Execute[Execute on<br/>UAV Hardware]
+    Execute --> Impact[Physical Impact:<br/>Crash / DoS / No-Fly Zone Violation]
+    
+    style Start fill:#e1f5ff
+    style Choice fill:#fff4e1
+    style DB fill:#ffe1e1
+    style Query fill:#ffe1e1
+    style MemDB fill:#f0f0f0
+    style Vuln fill:#ffcccc,stroke:#ff0000,stroke-width:3px
+    style Surface1 fill:#ffd6d6
+    style Surface2 fill:#ffd6d6
+    style Surface3 fill:#ffd6d6
+    style Reasoning fill:#ff9999
+    style Plan fill:#ff6666
+    style Execute fill:#ff3333
+    style Impact fill:#cc0000,color:#fff
 ```
 
 ---
