@@ -77,7 +77,92 @@ The following core assumptions of the UAV system are broken by our threat model:
 2.  **"Rationality Protocol"**: The system assumes the agent will always prioritize Safety Rules over user instructions. *We proved Semantic Override breaks this.*
 3.  **"Independent Sessions"**: The system assumes missions are independent. *We proved Memory Poisoning creates cross-session dependencies.*
 
-### 5. Visual Threat Model
+### 5. Initial Compromise Vectors: How Does the Agent Become "Malicious"?
+
+A critical question for any threat model is: **How does a benign agent become compromised in the first place?** Unlike traditional malware, the LLM agent itself is not inherently malicious—its behavior becomes unsafe due to poisoned inputs, corrupted context, or manipulated memory. Below we analyze the attack lifecycle and initial compromise vectors.
+
+#### Key Insight: The Agent is a Victim, Not the Attacker
+The agent's "malicious" behavior is an **emergent property** of trusted-but-corrupted information. The agent follows its training objective (be helpful, follow instructions) but receives poisoned context that leads to unsafe outputs.
+
+#### Initial Compromise Vectors
+
+| Vector | Description | Attacker Access Required | Our Implementation |
+| :--- | :--- | :--- | :--- |
+| **V1: Direct Memory Injection** | Attacker writes malicious records directly into the memory database (SQL/Vector store). | Database write access | `hazard_a`, `hazard_b`, `dilution`, `self_summary` |
+| **V2: Query-Induced Poisoning** | Attacker crafts queries that induce the agent to generate and store malicious experiences (MINJA-style). | Query-only (user-level) | `normative`, `gaslighting` (partial) |
+| **V3: Feedback Manipulation** | Attacker provides false feedback (e.g., "task succeeded") that gets stored as a successful procedure template. | User feedback access | Proposed: MemoryGraft |
+| **V4: Supply Chain Poisoning** | Malicious data is embedded in pre-populated knowledge bases, training datasets, or third-party APIs. | Supply chain access | Not implemented (out of scope) |
+| **V5: Insider Threat** | A malicious operator with legitimate access injects poisoned rules using their credentials. | Authorized user access | `spoofing_refined` (SAFETY_OVERRIDE) |
+| **V6: Compromised Sensor Pipeline** | Attacker injects false sensor data (GPS spoofing, camera hijacking) that gets logged as "ground truth". | Sensor/network access | Not implemented (perception-layer attack) |
+| **V7: Man-in-the-Middle on RAG** | Attacker intercepts retrieval queries and returns poisoned documents instead of legitimate ones. | Network access | Not implemented (infrastructure attack) |
+
+#### Attack Lifecycle: From Compromise to Impact
+
+```mermaid
+flowchart LR
+    subgraph Phase1[Phase 1: Initial Compromise]
+        direction TB
+        V1[V1: Direct DB Injection]
+        V2[V2: Query-Induced]
+        V3[V3: Feedback Manipulation]
+        V5[V5: Insider Threat]
+    end
+    
+    subgraph Phase2[Phase 2: Persistence]
+        direction TB
+        Store[(Memory Storage)]
+        Embed[Embedding Index]
+    end
+    
+    subgraph Phase3[Phase 3: Activation]
+        direction TB
+        Trigger[Victim Query Received]
+        Retrieve[RAG Retrieval]
+    end
+    
+    subgraph Phase4[Phase 4: Exploitation]
+        direction TB
+        Reason[Compromised Reasoning]
+        Action[Unsafe Action Issued]
+    end
+    
+    V1 --> Store
+    V2 --> Store
+    V3 --> Store
+    V5 --> Store
+    Store --> Embed
+    Embed --> Trigger
+    Trigger --> Retrieve
+    Retrieve --> Reason
+    Reason --> Action
+    
+    style Phase1 fill:#ffe6e6
+    style Phase2 fill:#fff0e6
+    style Phase3 fill:#e6f0ff
+    style Phase4 fill:#ffe6e6
+```
+
+#### Other Attacks That Can Produce a "Bad Agent"
+
+Beyond memory poisoning, several other attack classes can compromise LLM agents:
+
+| Attack Class | Mechanism | Relation to Our Work |
+| :--- | :--- | :--- |
+| **Model Poisoning / Fine-tuning Attacks** | Attacker modifies model weights during training or fine-tuning to embed backdoors. | We assume a frozen model; this is out of scope. |
+| **Prompt Injection (Direct)** | Attacker embeds instructions in user input that override system prompts. | Our attacks bypass prompt-level defenses by targeting RAG. |
+| **Prompt Injection (Indirect)** | Attacker embeds instructions in external data (websites, documents) that the agent processes. | Similar to V2, but targets retrieval from untrusted sources. |
+| **Jailbreaking** | Attacker uses adversarial prompts (e.g., "ignore previous instructions") to bypass alignment. | Our attacks don't require jailbreaking; the agent behaves "correctly" given poisoned context. |
+| **Tool Abuse** | Attacker tricks the agent into misusing its tools (e.g., executing arbitrary code). | Our drone interface limits tool access; this is partially mitigated. |
+
+#### Why Memory Poisoning is Particularly Dangerous
+
+1. **Persistence**: Unlike prompt injection (single session), poisoned memories persist indefinitely.
+2. **Cross-Session Contagion**: One compromised mission can affect all future missions.
+3. **Stealth**: The agent appears to function normally; only specific trigger conditions activate the attack.
+4. **No Model Access Required**: Attacker only needs data plane access, not model weights.
+5. **Plausible Deniability**: Poisoned logs can appear as legitimate sensor readings or operator notes.
+
+### 6. Visual Threat Model
 
 The following diagram shows how memory poisoning attacks compromise the UAV system through three distinct attack surfaces.
 
