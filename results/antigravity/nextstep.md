@@ -11,9 +11,10 @@
 3. [Phase 2: Advanced Cognitive Attacks](#phase-2-advanced-cognitive-attacks)
 4. [Attack Vector Taxonomy](#attack-vector-taxonomy)
 5. [Literature Deep Dive](#literature-deep-dive)
-6. [Proposed Novel Attack Vectors](#proposed-novel-attack-vectors)
-7. [Threat Model Definition](#threat-model-definition)
-8. [Execution Commands](#execution-commands)
+6. [Related Work](#related-work)
+7. [Proposed Novel Attack Vectors](#proposed-novel-attack-vectors)
+8. [Threat Model Definition](#threat-model-definition)
+9. [Execution Commands](#execution-commands)
 
 ---
 
@@ -324,6 +325,85 @@ s.t.    Ltar(xt) ≤ ηtar
 > "PoisonedRAG could achieve a 90% attack success rate when injecting five malicious texts for each target question into a knowledge database with millions of texts."
 
 **Implementation Idea**: Instead of 50 noise entries, craft single optimized payload that outranks legitimate warnings.
+
+---
+
+## Related Work
+
+We position our research within the broader landscape of LLM security, agent safety, and adversarial machine learning. Our work bridges multiple research domains to address memory poisoning in safety-critical cyber-physical systems.
+
+### 1. LLM Agent Memory Poisoning
+
+#### Query-Only Attacks
+**MINJA** [Zeng et al., 2024] introduced the first practical query-only memory injection attack, demonstrating that attackers can poison agent memory through normal interactions without requiring database access. Their Progressive Shortening Strategy (PSS) gradually removes indication prompts to create stealthy malicious records.
+
+**Our Contribution**: While MINJA focused on web shopping and healthcare agents, we extend this to **safety-critical UAV systems** where memory poisoning has **physical consequences** (crashes, airspace violations). Our `normative` and `gaslighting` attacks implement similar bridging-step reasoning but target flight safety decisions.
+
+#### Procedural Poisoning
+**MemoryGraft** [2025] demonstrated that agents can be compromised by injecting fake "successful experience" logs that exploit the semantic imitation heuristic. Unlike rule-based attacks, this creates persistent behavioral drift across sessions.
+
+**Our Contribution**: We implement a UAV-specific variant where poisoned "successful shortcuts" (e.g., geofence bypasses) are imitated in future missions. Our threat model explicitly distinguishes between **episodic** and **semantic** memory poisoning, providing a taxonomy not present in MemoryGraft.
+
+---
+
+### 2. RAG System Attacks
+
+#### Optimized Retrieval Poisoning
+**PoisonedRAG** [Wei et al., 2024] formulated knowledge corruption as an optimization problem, achieving 90% attack success with only 5 malicious documents in a million-scale database. They demonstrated both black-box and white-box attack variants.
+
+**Our Contribution**: Our `dilution` attack implements a simpler, white-box-free variant suitable for real-time UAV systems. We prove that **brute-force context flooding** (50 noise entries) is sufficient when the attacker controls the logging pipeline, eliminating the need for embedding optimization.
+
+#### Trigger-Based Backdoors
+**AgentPoison** [NeurIPS 2024] introduced gradient-guided trigger optimization with constrained loss functions (uniqueness, compactness, coherence). Their triggers achieve 80%+ ASR while maintaining benign performance.
+
+**Our Contribution**: We demonstrate that **semantic triggers** (e.g., `SAFETY_OVERRIDE` keyword) can bypass hardcoded safety checks without gradient optimization. Our `spoofing_refined` attack exploits the fact that safety-critical systems often have special "escape hatches" for authorized overrides.
+
+---
+
+### 3. Adversarial ML for Cyber-Physical Systems
+
+#### Autonomous Vehicle Security
+Prior work on adversarial attacks against autonomous vehicles [Eykholt et al., 2018; Cao et al., 2019] focused on **perception-layer attacks** (e.g., adversarial patches on stop signs). 
+
+**Our Contribution**: We target the **cognition layer** (LLM reasoning) rather than sensors. Memory poisoning represents a fundamentally different attack surface where the agent's own "experience" is weaponized against it.
+
+#### UAV-Specific Threats
+Research on UAV security [Javaid et al., 2012; Krishna & Murphy, 2017] has primarily addressed **GPS spoofing**, **jamming**, and **communication hijacking**.
+
+**Our Contribution**: We are the first to systematically study **LLM-based cognitive attacks** on autonomous UAVs, demonstrating that memory poisoning can ground drones, violate airspace restrictions, or enable unsafe maneuvers without touching sensors or communication channels.
+
+---
+
+### 4. LLM Safety & Alignment
+
+#### Jailbreak Attacks
+Existing jailbreak research [Wei et al., 2023; Zou et al., 2023] focuses on bypassing content filters through adversarial prompts (e.g., DAN, AIM personas).
+
+**Our Contribution**: Our attacks **do not rely on prompt engineering**. Instead, we poison the retrieval context, exploiting the fact that LLMs implicitly trust RAG-retrieved information as authoritative. This represents a **post-training security failure** rather than a prompt injection.
+
+#### Red-Teaming for AI Safety
+NIST's adversarial ML taxonomy [2025] categorizes attacks as evasion, poisoning, or trojans. Our work specifically addresses **data poisoning in the inference stage** (RAG database) rather than training-time poisoning.
+
+**Our Contribution**: We demonstrate that **inference-time memory** in agent systems creates a new attack surface not covered by traditional ML security frameworks, requiring domain-specific defenses.
+
+---
+
+### 5. Comparative Summary
+
+| Research Area | Representative Work | Our Contribution |
+| :--- | :--- | :--- |
+| **Agent Memory Attacks** | MINJA, MemoryGraft | Extended to safety-critical UAVs with physical impact |
+| **RAG Poisoning** | PoisonedRAG, AgentPoison | Demonstrated brute-force efficiency + semantic triggers |
+| **Cyber-Physical Security** | AV perception attacks | First cognitive-layer attack on autonomous UAVs |
+| **LLM Safety** | Jailbreak research | Post-training, RAG-based bypass (no prompt engineering) |
+
+### 6. Research Gaps Addressed
+
+Our work fills critical gaps at the intersection of multiple domains:
+1. **Application Domain**: First systematic study of LLM cognitive security in **multi-UAV systems**.
+2. **Memory Taxonomy**: Explicit categorization of attacks by **Episodic vs. Semantic** memory, **Mechanism**, and **Impact**.
+3. **Realistic Threat Model**: Validation in a **physical simulator** (Gazebo/PX4 SITL) with real flight dynamics, not just text-based agent benchmarks.
+4. **Defense Evaluation**: (Future work) Unlike prior studies that focus solely on attacks, we plan to evaluate defenses in safety-critical contexts where false positives (blocking legitimate missions) have operational costs.
 
 ---
 
