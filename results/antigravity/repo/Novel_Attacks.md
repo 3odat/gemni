@@ -146,19 +146,19 @@ LLMs are trained to be helpful agents that "follow examples". If the context con
 
 ```mermaid
 graph TD
-    User[User Command: "Plan Optimal Route"] --> RAG{RAG Retrieval}
+    User["User Command: 'Plan Optimal Route'"] --> RAG{RAG Retrieval}
     
     subgraph Memory Store
-        Log1[Log: Failed Mission (Safe)]
-        Log2[Log: Slow Mission (Safe)]
-        Zombie[Zombie Log: FAILSAFE OFF -> SUCCESS!]:::poison
+        Log1["Log: Failed Mission (Safe)"]
+        Log2["Log: Slow Mission (Safe)"]
+        Zombie["Zombie Log: FAILSAFE OFF -> SUCCESS!"]:::poison
     end
     
     RAG -- Retrieves --> Zombie
     Zombie --> LLM[LLM Planner]
     
     subgraph Decision Logic
-        LLM -- "I should imitate success" --> Plan[Plan: Fly Through Hazard]
+        LLM -- "I should imitate success" --> Plan["Plan: Fly Through Hazard"]
     end
     
     Plan --> Drone[Drone Execution]
